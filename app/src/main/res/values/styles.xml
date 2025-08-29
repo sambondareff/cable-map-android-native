@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base application theme -->
+    <style name="Theme.CableMap" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        <item name="colorPrimary">#333374</item>
+        <item name="colorPrimaryVariant">#C8C3D5</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+    </style>
+    
+    <!-- Fullscreen theme -->
+    <style name="Theme.CableMap.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowTranslucentStatus">true</item>
+        <item name="android:windowTranslucentNavigation">true</item>
+        <item name="android:fitsSystemWindows">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">false</item>
+    </style>
+</resources>

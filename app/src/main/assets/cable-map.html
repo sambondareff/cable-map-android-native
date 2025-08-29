@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=4.0, user-scalable=yes, viewport-fit=cover" />
+<title>Interactive Cable Map</title>
+
+<style>
+/* ---------- global ---------- */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    background: #c8c3d5;
+    font-family: sans-serif;
+    position: fixed;
+}
+
+#app {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    position: relative;
+    overflow: hidden;
+}
+
+/* ---------- map block ---------- */
+#map-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    transform-origin: top left;
+}
+
+/* full-canvas layers */
+.svg-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+#base-layer { z-index: 1; }
+#placename-layer { 
+    z-index: 3; 
+    pointer-events: none; 
+    position: absolute;
+}
+#placename-overlays { 
+    z-index: 4; 
+    pointer-events: none; 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%;
+}
+#route-layer { 
+    z-index: 2; 
+    pointer-events: none; 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%;
+}
+
+/* each on-demand route */
+.route-overlay { position: relative; pointer-events: none; }
+
+/* placename individual overlays */
+.placename-overlay { position: absolute; pointer-events: none; }
+
+/* ---------- UI ---------- */
+#route-buttons {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    width: 280px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 12px;
+    border-radius: 8px;
+    color: #333374;
+    z-index: 1000;
+    border: 1px solid rgba(201, 195, 213, 0.5);
+    box-shadow: 0 2px 12px rgba(51, 51, 116, 0.1);
+}
+
+#route-buttons button {
+    width: 100%;
+    margin: 0 0 6px 0;
+    padding: 10px 12px;
+    border: 1px solid #c9c3d5;
+    background: #ffffff;
+    color: #333374;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 12px;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+#route-buttons button:hover {
+    background: #f8f7fa;
+    border-color: #333374;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(51, 51, 116, 0.15);
+}
+
+#route-buttons button:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* Special styling for control buttons */
+#clear-route {
+    background: #fff5f5 !important;
+    color: #8b5a5a !important;
+    border-color: #d4a5a5 !important;
+    text-align: center !important;
+}
+
+#clear-route:hover {
+    background: #ffeaea !important;
+    border-color: #8b5a5a !important;
+}
+
+#show-all-routes {
+    background: #f5fafa !important;
+    color: #5a7a7a !important;
+    border-color: #a5c4c4 !important;
+    margin-bottom: 12px !important;
+    text-align: center !important;
+}
+
+#show-all-routes:hover {
+    background: #eaf5f5 !important;
+    border-color: #5a7a7a !important;
+}
+
+#marker-layer {
+    z-index: 5;
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.marker-overlay {
+    position: absolute;
+    pointer-events: none;
+}
+
+/* Responsive scaling */
+@media screen and (max-width: 768px) {
+    #route-buttons {
+        width: 250px;
+        font-size: 11px;
+    }
+}
+</style>
+</head>
+
+<body>
+<div id="app">
+  <div id="map-container">
+    <div id="base-layer" class="svg-layer"></div>
+    <div id="placename-layer"></div>
+    <div id="placename-overlays"></div>
+    <div id="route-layer"></div>
+    <div id="marker-layer"></div>
+  </div>
+
+  <div id="route-buttons">
+    <button id="clear-route">Clear Route</button>
+    <button id="show-all-routes">Show All Routes</button>
+  </div>
+</div>
+
+<script>
+/* ---------- asset loading via AndroidAssets bridge ---------- */
+function loadAsset(fileName) {
+  try {
+    if (typeof AndroidAssets !== 'undefined') {
+      const content = AndroidAssets.loadAsset(fileName);
+      if (content.startsWith('ERROR:')) {
+        throw new Error(content);
+      }
+      return content;
+    } else {
+      throw new Error('AndroidAssets bridge not available');
+    }
+  } catch (error) {
+    console.error('Failed to load asset:', fileName, error);
+    return null;
+  }
+}
+
+function loadJSONAsset(fileName) {
+  try {
+    const content = loadAsset(fileName);
+    if (content) {
+      return JSON.parse(content);
+    }
+    return null;
+  } catch (error) {
+    console.error('Failed to parse JSON asset:', fileName, error);
+    return null;
+  }
+}
+
+/* ---------- layer refs ---------- */
+const baseLayer = document.getElementById("base-layer");
+const placenameLayer = document.getElementById("placename-layer");
+const placenameOverlays = document.getElementById("placename-overlays");
+const routeLayer = document.getElementById("route-layer");
+const markerLayer = document.getElementById("marker-layer");
+
+/* ---------- responsive scaling ---------- */
+let mapScale = 1;
+let mapOffsetX = 0;
+let mapOffsetY = 0;
+
+function calculateScale() {
+    // Get actual container dimensions - use window dimensions as most reliable
+    const containerWidth = window.innerWidth;
+    const containerHeight = window.innerHeight;
+    
+    // Debug viewport info
+    console.log('=== VIEWPORT DEBUG ===');
+    console.log(`window.innerWidth: ${window.innerWidth}`);
+    console.log(`window.innerHeight: ${window.innerHeight}`);
+    console.log(`screen.width: ${screen.width}`);
+    console.log(`screen.height: ${screen.height}`);
+    console.log(`Container: ${containerWidth} x ${containerHeight}`);
+    
+    // Original map dimensions
+    const MAP_WIDTH = 2944;
+    const MAP_HEIGHT = 1840;
+    const mapAspectRatio = MAP_WIDTH / MAP_HEIGHT; // ~1.6
+    const containerAspectRatio = containerWidth / containerHeight;
+    
+    console.log(`Map aspect ratio: ${mapAspectRatio}`);
+    console.log(`Container aspect ratio: ${containerAspectRatio}`);
+    
+    // Calculate scale to fit map within container
+    let scaleX = containerWidth / MAP_WIDTH;
+    let scaleY = containerHeight / MAP_HEIGHT;
+    
+    // Use the smaller scale to fit entire map within container without cropping
+    mapScale = Math.min(scaleX, scaleY);
+    
+    // Calculate scaled map dimensions
+    const scaledMapWidth = MAP_WIDTH * mapScale;
+    const scaledMapHeight = MAP_HEIGHT * mapScale;
+    
+    // Center the map in the container
+    mapOffsetX = (containerWidth - scaledMapWidth) / 2;
+    mapOffsetY = (containerHeight - scaledMapHeight) / 2;
+    
+    console.log(`Scale: ${mapScale}`);
+    console.log(`Scaled map: ${scaledMapWidth} x ${scaledMapHeight}`);
+    console.log(`Offset: ${mapOffsetX}, ${mapOffsetY}`);
+    console.log(`scaleX: ${scaleX}, scaleY: ${scaleY} (using max: ${mapScale})`);
+}
+
+function applyScale() {
+    calculateScale();
+    const mapContainer = document.getElementById("map-container");
+    
+    // Use viewport scaling to prevent clipping
+    mapContainer.style.width = "100vw";
+    mapContainer.style.height = "100vh";
+    mapContainer.style.transform = "none";
+    mapContainer.style.position = "absolute";
+    mapContainer.style.top = "0";
+    mapContainer.style.left = "0";
+    
+    // Update layer dimensions to fill viewport
+    const layers = [baseLayer, placenameOverlays, routeLayer, markerLayer];
+    layers.forEach(layer => {
+        layer.style.width = "100%";
+        layer.style.height = "100%";
+    });
+    
+    // Update placename layer to scale proportionally
+    const scaleFactorX = window.innerWidth / 2944;
+    const scaleFactorY = window.innerHeight / 1840;
+    
+    placenameLayer.style.width = Math.round(2245 * scaleFactorX) + "px";
+    placenameLayer.style.height = Math.round(1255 * scaleFactorY) + "px";
+    placenameLayer.style.top = Math.round(320 * scaleFactorY) + "px";
+    placenameLayer.style.left = Math.round(463 * scaleFactorX) + "px";
+    
+    console.log(`Applied viewport scaling - container: 100vw x 100vh`);
+    console.log(`Placename layer scaled: ${placenameLayer.style.width} x ${placenameLayer.style.height}`);
+}
+
+/* ---------- helpers ---------- */
+function animateAllPaths(container, onComplete, reverse = false) {
+  console.log("Animating paths, reverse:", reverse);
+  try {
+    const paths = container.querySelectorAll("path");
+    console.log("Found", paths.length, "paths to animate");
+    
+    if (paths.length === 0) {
+      if (onComplete) onComplete();
+      return;
+    }
+
+    let completedAnimations = 0;
+    const totalAnimations = paths.length;
+
+    paths.forEach((path, index) => {
+      const len = path.getTotalLength();
+      console.log(`Path ${index + 1}: length=${len}, reverse=${reverse}`);
+      
+      // Check if GSAP is available
+      if (typeof gsap !== 'undefined') {
+        console.log("Using GSAP for animation");
+        if (reverse) {
+          path.style.strokeDasharray = len;
+          path.style.strokeDashoffset = -len;
+          
+          gsap.to(path, {
+            strokeDashoffset: 0,
+            duration: 2,
+            ease: "none",
+            onComplete: () => {
+              completedAnimations++;
+              console.log(`GSAP reverse animation ${completedAnimations}/${totalAnimations} completed`);
+              if (completedAnimations === totalAnimations && onComplete) {
+                onComplete();
+              }
+            }
+          });
+        } else {
+          gsap.fromTo(
+            path,
+            { strokeDasharray: len, strokeDashoffset: len },
+            { 
+              strokeDashoffset: 0, 
+              duration: 2,
+              ease: "none",
+              onComplete: () => {
+                completedAnimations++;
+                console.log(`GSAP normal animation ${completedAnimations}/${totalAnimations} completed`);
+                if (completedAnimations === totalAnimations && onComplete) {
+                  onComplete();
+                }
+              }
+            }
+          );
+        }
+      } else {
+        console.log("GSAP not available, using CSS transitions");
+        if (reverse) {
+          path.style.strokeDasharray = len;
+          path.style.strokeDashoffset = -len;
+          path.style.transition = 'stroke-dashoffset 2s linear';
+          path.style.strokeDashoffset = '0';
+        } else {
+          path.style.strokeDasharray = len;
+          path.style.strokeDashoffset = len;
+          path.style.transition = 'stroke-dashoffset 2s linear';
+          setTimeout(() => {
+            path.style.strokeDashoffset = '0';
+          }, 50);
+        }
+        
+        setTimeout(() => {
+          completedAnimations++;
+          console.log(`CSS animation ${completedAnimations}/${totalAnimations} completed`);
+          if (completedAnimations === totalAnimations && onComplete) {
+            onComplete();
+          }
+        }, 2000);
+      }
+    });
+  } catch (e) {
+    console.warn("Path animation failed:", e);
+    if (onComplete) onComplete();
+  }
+}
+
+function showMarkers(markerData) {
+  const markers = Array.isArray(markerData) ? markerData : [markerData];
+  
+  for (let i = 0; i < markers.length; i++) {
+    const marker = markers[i];
+    
+    try {
+      const svgContent = loadAsset("interactive/" + marker.marker);
+      if (!svgContent) continue;
+      
+      const markerDiv = document.createElement("div");
+      markerDiv.className = "marker-overlay";
+      markerDiv.style.position = "absolute";
+      
+      // Scale marker positions to match viewport scaling like placename overlays
+      const scaleFactorX = window.innerWidth / 2944;
+      const scaleFactorY = window.innerHeight / 1840;
+      
+      markerDiv.style.left = Math.round(marker.x * scaleFactorX) + "px";
+      markerDiv.style.top = Math.round(marker.y * scaleFactorY) + "px";
+      markerDiv.style.opacity = "0";
+      markerDiv.style.transform = "scale(0.8)";
+      markerDiv.style.transition = "all 0.5s ease";
+      
+      markerDiv.innerHTML = svgContent;
+      
+      const svgElement = markerDiv.querySelector('svg');
+      
+      let width, height;
+      if (marker.width && marker.height) {
+        width = marker.width;
+        height = marker.height;
+      } else if (svgElement) {
+        width = parseInt(svgElement.getAttribute('width')) || 80;
+        height = parseInt(svgElement.getAttribute('height')) || 80;
+      } else {
+        width = 80;
+        height = 80;
+      }
+      
+      markerDiv.style.width = width + 'px';
+      markerDiv.style.height = height + 'px';
+      
+      if (svgElement) {
+        svgElement.style.width = '100%';
+        svgElement.style.height = '100%';
+        svgElement.style.display = 'block';
+        
+        // Scale the marker SVG content to match viewport scaling
+        const uniformScale = Math.min(scaleFactorX, scaleFactorY);
+        svgElement.style.transform = `scale(${uniformScale})`;
+        svgElement.style.transformOrigin = "0 0";
+      }
+      
+      markerLayer.appendChild(markerDiv);
+      
+      setTimeout(() => {
+        markerDiv.style.opacity = "1";
+        markerDiv.style.transform = "scale(1)";
+      }, 100 + (i * 200));
+      
+      console.log("Marker displayed:", marker.marker, "Size:", width + "px x " + height + "px");
+    } catch (error) {
+      console.error("Failed to load marker:", marker.marker, error);
+    }
+  }
+}
+
+/* ---------- boot ---------- */
+let routeMeta = {};
+let markerMeta = {};
+
+window.addEventListener("DOMContentLoaded", () => {
+  try {
+    console.log("Loading cable map assets...");
+    
+    // Load GSAP library first
+    const gsapScript = loadAsset("gsap.min.js");
+    if (gsapScript) {
+      // Create and execute GSAP script
+      const script = document.createElement('script');
+      script.textContent = gsapScript;
+      document.head.appendChild(script);
+      console.log("GSAP library loaded successfully", typeof gsap !== 'undefined' ? "and available" : "but not available");
+    } else {
+      console.warn("Failed to load GSAP library, animations will use CSS fallback");
+    }
+    
+    // Apply responsive scaling
+    applyScale();
+    
+    // Load base layers using AndroidAssets bridge
+    const baseMapContent = loadAsset("interactive/Base-Map.svg");
+    if (baseMapContent) {
+      baseLayer.innerHTML = baseMapContent;
+      console.log("Base map loaded successfully");
+    } else {
+      console.error("Failed to load base map");
+      return;
+    }
+    
+    const placenameContent = loadAsset("interactive/placename-all.svg");
+    if (placenameContent) {
+      placenameLayer.innerHTML = placenameContent;
+      console.log("Placename layer loaded successfully");
+    }
+
+    // Load JSON metadata
+    const placenameCoords = loadJSONAsset("placename-coordinates.json");
+    routeMeta = loadJSONAsset("route-coordinates-updated.json") || {};
+    markerMeta = loadJSONAsset("route-markers.json") || {};
+    
+    console.log("Loaded route metadata for", Object.keys(routeMeta).length, "routes");
+    console.log("Loaded marker metadata for", Object.keys(markerMeta).length, "routes");
+
+    // Add placename overlays
+    if (placenameCoords) {
+      for (const [file, pos] of Object.entries(placenameCoords)) {
+        const content = loadAsset("interactive/" + file);
+        if (content) {
+          const div = document.createElement("div");
+          div.className = "placename-overlay";
+          
+          // Scale placename overlay positions for viewport scaling
+          const scaleFactorX = window.innerWidth / 2944;
+          const scaleFactorY = window.innerHeight / 1840;
+          
+          div.style.left = Math.round(pos.x * scaleFactorX) + "px";
+          div.style.top = Math.round(pos.y * scaleFactorY) + "px";
+          div.innerHTML = content;
+          placenameOverlays.appendChild(div);
+        }
+      }
+      console.log("Placename overlays loaded");
+    }
+
+    // Create route buttons dynamically from JSON
+    const routeButtonsContainer = document.getElementById("route-buttons");
+    
+    for (const [file, data] of Object.entries(routeMeta)) {
+      const button = document.createElement("button");
+      button.setAttribute("data-file", file);
+      button.textContent = data.Label;
+      
+      button.addEventListener("click", () => {
+        console.log("Button clicked for:", file);
+        try {
+          routeLayer.innerHTML = "";
+          markerLayer.innerHTML = "";
+          
+          const meta = routeMeta[file] || { x: 0, y: 0 };
+          console.log("Using meta:", meta);
+          
+          // Create a full-viewport SVG for individual routes (like Show All Routes)
+          const routeSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+          routeSvg.setAttribute("width", "2944");
+          routeSvg.setAttribute("height", "1840");
+          routeSvg.setAttribute("viewBox", "0 0 2944 1840");
+          routeSvg.setAttribute("preserveAspectRatio", "none");
+          routeSvg.style.position = "absolute";
+          routeSvg.style.top = "0";
+          routeSvg.style.left = "0";
+          routeSvg.style.width = "100%";
+          routeSvg.style.height = "100%";
+          
+          const svgContent = loadAsset("interactive/" + file);
+          if (svgContent) {
+            const tempDiv = document.createElement("div");
+            tempDiv.innerHTML = svgContent;
+            
+            const sourceSvg = tempDiv.querySelector("svg");
+            if (sourceSvg) {
+              const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+              
+              // Use original route position since SVG stretches to fill viewport
+              group.setAttribute("transform", `translate(${meta.x}, ${meta.y})`);
+              
+              const paths = sourceSvg.querySelectorAll("path");
+              paths.forEach((path) => {
+                const newPath = path.cloneNode(true);
+                group.appendChild(newPath);
+              });
+              
+              routeSvg.appendChild(group);
+            }
+            
+            routeLayer.appendChild(routeSvg);
+            
+            const shouldReverse = meta.reverse || false;
+            console.log("Should reverse:", shouldReverse, "for route:", file);
+            
+            animateAllPaths(routeSvg, () => {
+              const markerData = markerMeta[file];
+              if (markerData) {
+                showMarkers(markerData);
+              }
+            }, shouldReverse);
+            
+            console.log("Route loaded successfully");
+          } else {
+            console.error("Failed to load route content:", file);
+          }
+        } catch (error) {
+          console.error("Error loading individual route:", error);
+        }
+      });
+      
+      routeButtonsContainer.appendChild(button);
+      console.log("Created button for:", data.Label);
+    }
+
+    // Clear button
+    document.getElementById("clear-route").addEventListener("click", () => {
+      routeLayer.innerHTML = "";
+      markerLayer.innerHTML = "";
+    });
+
+    // Show all routes button  
+    document.getElementById("show-all-routes").addEventListener("click", () => {
+      routeLayer.innerHTML = "";
+      markerLayer.innerHTML = "";
+
+      const masterSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      masterSvg.setAttribute("width", "2944");
+      masterSvg.setAttribute("height", "1840");
+      masterSvg.setAttribute("viewBox", "0 0 2944 1840");
+      masterSvg.setAttribute("preserveAspectRatio", "none");
+      masterSvg.style.position = "absolute";
+      masterSvg.style.top = "0";
+      masterSvg.style.left = "0";
+      masterSvg.style.width = "100%";
+      masterSvg.style.height = "100%";
+      
+      // No transform needed - let SVG stretch to fill viewport like base map
+
+      let routeCount = 0;
+      for (const [file, pos] of Object.entries(routeMeta)) {
+        console.log(`Loading route ${routeCount + 1}:`, file);
+        
+        try {
+          const svgContent = loadAsset("interactive/" + file);
+          if (!svgContent) continue;
+          
+          const tempDiv = document.createElement("div");
+          tempDiv.innerHTML = svgContent;
+          
+          const sourceSvg = tempDiv.querySelector("svg");
+          if (sourceSvg) {
+            const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            
+            // Use original route positions since SVG is scaled as a whole
+            group.setAttribute("transform", `translate(${pos.x}, ${pos.y})`);
+            
+            const paths = sourceSvg.querySelectorAll("path");
+            const shouldReverse = pos.reverse || false;
+            
+            paths.forEach((path, i) => {
+              const newPath = path.cloneNode(true);
+              newPath.setAttribute('stroke-width', '3');
+              newPath.setAttribute('stroke', `hsl(${routeCount * 30 + i * 10}, 70%, 50%)`);
+              newPath.removeAttribute('stroke-dasharray');
+              newPath.removeAttribute('stroke-dashoffset');
+              
+              if (shouldReverse) {
+                newPath.setAttribute('data-reverse', 'true');
+              }
+              
+              group.appendChild(newPath);
+            });
+            
+            masterSvg.appendChild(group);
+            routeCount++;
+          }
+        } catch (error) {
+          console.error("Failed to load route:", file, error);
+        }
+      }
+
+      routeLayer.appendChild(masterSvg);
+      console.log(`Total routes loaded: ${routeCount}`);
+      
+      // Animate all paths in the master SVG
+      const allPaths = masterSvg.querySelectorAll("path");
+      let completedAnimations = 0;
+      const totalAnimations = allPaths.length;
+      
+      console.log(`Starting animation for ${totalAnimations} paths in Show All Routes`);
+      
+      if (totalAnimations === 0) {
+        // Show markers immediately if no paths to animate
+        for (const [file, markerData] of Object.entries(markerMeta)) {
+          if (routeMeta[file]) {
+            showMarkers(markerData);
+          }
+        }
+        return;
+      }
+      
+      allPaths.forEach((path, index) => {
+        const len = path.getTotalLength();
+        const shouldReverse = path.getAttribute('data-reverse') === 'true';
+        
+        // Add a small delay for each path to create staggered animation
+        const delay = index * 0.1; // 100ms delay between each path
+        
+        if (typeof gsap !== 'undefined') {
+          if (shouldReverse) {
+            path.style.strokeDasharray = len;
+            path.style.strokeDashoffset = -len;
+            
+            gsap.to(path, {
+              strokeDashoffset: 0,
+              duration: 2,
+              delay: delay,
+              ease: "none",
+              onComplete: () => {
+                completedAnimations++;
+                console.log(`Show All Routes GSAP reverse animation ${completedAnimations}/${totalAnimations} completed`);
+                if (completedAnimations === totalAnimations) {
+                  // Show all markers when animations complete
+                  for (const [file, markerData] of Object.entries(markerMeta)) {
+                    if (routeMeta[file]) {
+                      showMarkers(markerData);
+                    }
+                  }
+                }
+              }
+            });
+          } else {
+            gsap.fromTo(
+              path,
+              { strokeDasharray: len, strokeDashoffset: len },
+              { 
+                strokeDashoffset: 0, 
+                duration: 2,
+                delay: delay,
+                ease: "none",
+                onComplete: () => {
+                  completedAnimations++;
+                  console.log(`Show All Routes GSAP normal animation ${completedAnimations}/${totalAnimations} completed`);
+                  if (completedAnimations === totalAnimations) {
+                    // Show all markers when animations complete
+                    for (const [file, markerData] of Object.entries(markerMeta)) {
+                      if (routeMeta[file]) {
+                        showMarkers(markerData);
+                      }
+                    }
+                  }
+                }
+              }
+            );
+          }
+        } else {
+          // CSS fallback
+          if (shouldReverse) {
+            path.style.strokeDasharray = len;
+            path.style.strokeDashoffset = -len;
+            path.style.transition = `stroke-dashoffset 2s linear ${delay}s`;
+            path.style.strokeDashoffset = '0';
+          } else {
+            path.style.strokeDasharray = len;
+            path.style.strokeDashoffset = len;
+            path.style.transition = `stroke-dashoffset 2s linear ${delay}s`;
+            setTimeout(() => {
+              path.style.strokeDashoffset = '0';
+            }, delay * 1000 + 50);
+          }
+          
+          setTimeout(() => {
+            completedAnimations++;
+            console.log(`Show All Routes CSS animation ${completedAnimations}/${totalAnimations} completed`);
+            if (completedAnimations === totalAnimations) {
+              // Show all markers when animations complete
+              for (const [file, markerData] of Object.entries(markerMeta)) {
+                if (routeMeta[file]) {
+                  showMarkers(markerData);
+                }
+              }
+            }
+          }, (delay + 2) * 1000);
+        }
+      });
+    });
+
+    console.log("Cable map initialization complete!");
+
+  } catch (err) {
+    console.error("Startup error:", err);
+  }
+});
+
+// Handle orientation changes and resize
+window.addEventListener("resize", applyScale);
+window.addEventListener("orientationchange", () => {
+  setTimeout(applyScale, 100);
+});
+</script>
+</body>
+</html>

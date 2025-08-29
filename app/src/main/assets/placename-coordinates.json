@@ -1,0 +1,62 @@
+{
+  "route-Google-MetaEchoSpur.svg": {
+    "x": 0,
+    "y": 0,
+    "Label": "Google Meta Echo spur"
+  },
+  "route-GoogleBosunCable.svg": {
+    "x": 0,
+    "y": 0,
+    "Label": "Googlebosuncable"
+  },
+  "route-GoogleHonomoana.svg": {
+    "x": 0,
+    "y": 0,
+    "Label": "Googlehonomoana"
+  },
+  "route-GoogleInterlink.svg": {
+    "x": 0,
+    "y": 0,
+    "Label": "Googleinterlink"
+  },
+  "route-GoogleMetaEcho.svg": {
+    "x": 0,
+    "y": 0,
+    "Label": "Googlemetaecho"
+  },
+  "route-GoogleTabua.svg": {
+    "x": 0,
+    "y": 0,
+    "Label": "Googletabua"
+  },
+  "route-HawaikiNui.svg": {
+    "x": 0,
+    "y": 0,
+    "Label": "Hawaikinui"
+  },
+  "route-IndigoAsia.svg": {
+    "x": 0,
+    "y": 0,
+    "Label": "Indigoasia"
+  },
+  "route-InligosUnite_1.svg": {
+    "x": 0,
+    "y": 0,
+    "Label": "Inligosunite_1"
+  },
+  "route-MetaWaterworth.svg": {
+    "x": 0,
+    "y": 0,
+    "Label": "Metawaterworth"
+  },
+  "route-TelstraIntercity.svg": {
+    "x": 0,
+    "y": 0,
+    "Label": "Telstraintercity"
+  },
+  "route-VocusInstalled.svg": {
+    "x": 0,
+    "y": 0,
+    "Label": "Vocusinstalled"
+  }
+}

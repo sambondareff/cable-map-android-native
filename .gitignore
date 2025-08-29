@@ -1,0 +1,51 @@
+# Gradle files
+.gradle/
+build/
+gradle/wrapper/gradle-wrapper.jar
+
+# Android build outputs
+*.apk
+*.aar
+*.ap_
+
+# Generated files
+bin/
+gen/
+out/
+
+# Local configuration files
+local.properties
+*.keystore
+keystore.properties
+
+# Log files
+*.log
+
+# Android Studio
+.idea/
+*.iml
+.DS_Store
+.settings/
+.classpath
+.project
+
+# NDK
+obj/
+
+# Lint
+lint-report.html
+
+# Captures
+captures/
+
+# IntelliJ
+*.iws
+
+# External native build
+externalNativeBuild/
+
+# Version control
+.svn/
+
+# OS generated files
+Thumbs.db

@@ -1,0 +1,47 @@
+{
+  "route-GoogleHonomoana.svg": [
+    {
+      "marker": "placename-FrenchPoly.svg",
+      "x": 2720,
+      "y": 1130,
+    "width": 203,
+    "height": 137
+    },
+    {
+      "marker": "placename-UnitedStates.svg", 
+      "x": 2580,
+      "y": 430,
+    "width": 329,
+    "height": 41
+    }
+  ],
+  "route-GoogleTabua.svg": {
+    "marker": "placename-UnitedStates.svg", 
+      "x": 2560,
+      "y": 560,
+    "width": 329,
+    "height": 41
+  },
+  "route-MetaWaterworth.svg": {
+    "marker": "placename-UnitedStates.svg", 
+      "x": 2577,
+      "y": 248,
+    "width": 329,
+    "height": 41
+  },
+  "route-GoogleMetaEcho.svg": {
+    "marker": "placename-UnitedStates.svg", 
+      "x": 2560,
+      "y": 300,
+    "width": 329,
+    "height": 41
+  },
+  "route-IndigoAsia.svg": {
+    "marker": "placename-LA.svg", 
+      "x": 2580,
+      "y": 360,
+    "width": 293,
+    "height": 43
+  }
+  
+}
