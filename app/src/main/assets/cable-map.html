@@ -630,21 +630,34 @@ window.addEventListener("DOMContentLoaded", () => {
         
         // Create content container
         const accordionContent = document.createElement('div');
-        accordionContent.className = 'accordion-content expanded'; // Start expanded
+        accordionContent.className = 'accordion-content collapsed'; // Start collapsed
+        
+        // Start with header collapsed too
+        accordionHeader.classList.add('collapsed');
         
         // Add click handler for accordion toggle
         accordionHeader.addEventListener('click', () => {
-          const isCollapsed = accordionHeader.classList.contains('collapsed');
+          const isCurrentlyCollapsed = accordionHeader.classList.contains('collapsed');
           
-          if (isCollapsed) {
+          // Close all other accordion sections first
+          const allHeaders = accordionContainer.querySelectorAll('.accordion-header');
+          const allContents = accordionContainer.querySelectorAll('.accordion-content');
+          
+          allHeaders.forEach(header => {
+            header.classList.add('collapsed');
+          });
+          allContents.forEach(content => {
+            content.classList.remove('expanded');
+            content.classList.add('collapsed');
+          });
+          
+          // If this section was collapsed, open it
+          if (isCurrentlyCollapsed) {
             accordionHeader.classList.remove('collapsed');
             accordionContent.classList.remove('collapsed');
             accordionContent.classList.add('expanded');
-          } else {
-            accordionHeader.classList.add('collapsed');
-            accordionContent.classList.remove('expanded');
-            accordionContent.classList.add('collapsed');
           }
+          // If it was open, it stays closed (already handled by the close-all above)
         });
         
         // Create buttons for this category
