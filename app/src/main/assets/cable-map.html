@@ -160,6 +160,68 @@ html, body {
     pointer-events: none;
 }
 
+/* Accordion styles */
+.accordion-section {
+    margin-bottom: 8px;
+}
+
+.accordion-header {
+    width: 100%;
+    padding: 12px 16px;
+    background: #f0f0f5 !important;
+    color: #333374 !important;
+    border: 1px solid #c9c3d5 !important;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+    margin-bottom: 4px !important;
+}
+
+.accordion-header:hover {
+    background: #e8e7ed !important;
+    border-color: #333374 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(51, 51, 116, 0.15);
+}
+
+.accordion-header .chevron {
+    font-size: 12px;
+    transition: transform 0.2s ease;
+    color: #666;
+}
+
+.accordion-header.collapsed .chevron {
+    transform: rotate(-90deg);
+}
+
+.accordion-content {
+    border-radius: 4px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.accordion-content.collapsed {
+    max-height: 0;
+    opacity: 0;
+}
+
+.accordion-content.expanded {
+    max-height: 1000px;
+    opacity: 1;
+}
+
+.accordion-content button {
+    margin-left: 12px !important;
+    margin-right: 12px !important;
+    width: calc(100% - 24px) !important;
+}
+
 /* Responsive scaling */
 @media screen and (max-width: 768px) {
     #route-buttons {
@@ -183,6 +245,9 @@ html, body {
   <div id="route-buttons">
     <button id="clear-route">Clear Route</button>
     <button id="show-all-routes">Show All Routes</button>
+    
+    <!-- Accordion sections will be dynamically generated here -->
+    <div id="accordion-container"></div>
   </div>
 </div>
 
@@ -528,79 +593,141 @@ window.addEventListener("DOMContentLoaded", () => {
       console.log("Placename overlays loaded");
     }
 
-    // Create route buttons dynamically from JSON
-    const routeButtonsContainer = document.getElementById("route-buttons");
+    // Create accordion sections with categorized route buttons
+    const accordionContainer = document.getElementById("accordion-container");
     
+    // Define category titles and their display names
+    const categoryTitles = {
+      'installed': 'Installed',
+      'under-construction': 'Under Construction',
+      'planned': 'Planned'
+    };
+    
+    // Group routes by category
+    const routesByCategory = {};
     for (const [file, data] of Object.entries(routeMeta)) {
-      const button = document.createElement("button");
-      button.setAttribute("data-file", file);
-      button.textContent = data.Label;
-      
-      button.addEventListener("click", () => {
-        console.log("Button clicked for:", file);
-        try {
-          routeLayer.innerHTML = "";
-          markerLayer.innerHTML = "";
+      const category = data.category || 'planned'; // default to planned if no category
+      if (!routesByCategory[category]) {
+        routesByCategory[category] = [];
+      }
+      routesByCategory[category].push({ file, data });
+    }
+    
+    // Create accordion sections for each category
+    for (const [category, categoryTitle] of Object.entries(categoryTitles)) {
+      if (routesByCategory[category] && routesByCategory[category].length > 0) {
+        // Create accordion section
+        const accordionSection = document.createElement('div');
+        accordionSection.className = 'accordion-section';
+        
+        // Create header
+        const accordionHeader = document.createElement('button');
+        accordionHeader.className = 'accordion-header';
+        accordionHeader.innerHTML = `
+          <span>${categoryTitle}</span>
+          <span class="chevron">▼</span>
+        `;
+        
+        // Create content container
+        const accordionContent = document.createElement('div');
+        accordionContent.className = 'accordion-content expanded'; // Start expanded
+        
+        // Add click handler for accordion toggle
+        accordionHeader.addEventListener('click', () => {
+          const isCollapsed = accordionHeader.classList.contains('collapsed');
           
-          const meta = routeMeta[file] || { x: 0, y: 0 };
-          console.log("Using meta:", meta);
-          
-          // Create a full-viewport SVG for individual routes (like Show All Routes)
-          const routeSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-          routeSvg.setAttribute("width", "2944");
-          routeSvg.setAttribute("height", "1840");
-          routeSvg.setAttribute("viewBox", "0 0 2944 1840");
-          routeSvg.setAttribute("preserveAspectRatio", "none");
-          routeSvg.style.position = "absolute";
-          routeSvg.style.top = "0";
-          routeSvg.style.left = "0";
-          routeSvg.style.width = "100%";
-          routeSvg.style.height = "100%";
-          
-          const svgContent = loadAsset("interactive/" + file);
-          if (svgContent) {
-            const tempDiv = document.createElement("div");
-            tempDiv.innerHTML = svgContent;
-            
-            const sourceSvg = tempDiv.querySelector("svg");
-            if (sourceSvg) {
-              const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
-              
-              // Use original route position since SVG stretches to fill viewport
-              group.setAttribute("transform", `translate(${meta.x}, ${meta.y})`);
-              
-              const paths = sourceSvg.querySelectorAll("path");
-              paths.forEach((path) => {
-                const newPath = path.cloneNode(true);
-                group.appendChild(newPath);
-              });
-              
-              routeSvg.appendChild(group);
-            }
-            
-            routeLayer.appendChild(routeSvg);
-            
-            const shouldReverse = meta.reverse || false;
-            console.log("Should reverse:", shouldReverse, "for route:", file);
-            
-            animateAllPaths(routeSvg, () => {
-              const markerData = markerMeta[file];
-              if (markerData) {
-                showMarkers(markerData);
-              }
-            }, shouldReverse);
-            
-            console.log("Route loaded successfully");
+          if (isCollapsed) {
+            accordionHeader.classList.remove('collapsed');
+            accordionContent.classList.remove('collapsed');
+            accordionContent.classList.add('expanded');
           } else {
-            console.error("Failed to load route content:", file);
+            accordionHeader.classList.add('collapsed');
+            accordionContent.classList.remove('expanded');
+            accordionContent.classList.add('collapsed');
           }
-        } catch (error) {
-          console.error("Error loading individual route:", error);
+        });
+        
+        // Create buttons for this category
+        for (const { file, data } of routesByCategory[category]) {
+          const button = document.createElement("button");
+          button.setAttribute("data-file", file);
+          button.textContent = data.Label;
+          
+          button.addEventListener("click", () => {
+            console.log("Button clicked for:", file);
+            try {
+              routeLayer.innerHTML = "";
+              markerLayer.innerHTML = "";
+              
+              const meta = routeMeta[file] || { x: 0, y: 0 };
+              console.log("Using meta:", meta);
+              
+              // Create a full-viewport SVG for individual routes (like Show All Routes)
+              const routeSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+              routeSvg.setAttribute("width", "2944");
+              routeSvg.setAttribute("height", "1840");
+              routeSvg.setAttribute("viewBox", "0 0 2944 1840");
+              routeSvg.setAttribute("preserveAspectRatio", "none");
+              routeSvg.style.position = "absolute";
+              routeSvg.style.top = "0";
+              routeSvg.style.left = "0";
+              routeSvg.style.width = "100%";
+              routeSvg.style.height = "100%";
+              
+              const svgContent = loadAsset("interactive/" + file);
+              if (svgContent) {
+                const tempDiv = document.createElement("div");
+                tempDiv.innerHTML = svgContent;
+                
+                const sourceSvg = tempDiv.querySelector("svg");
+                if (sourceSvg) {
+                  const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                  
+                  // Use original route position since SVG stretches to fill viewport
+                  group.setAttribute("transform", `translate(${meta.x}, ${meta.y})`);
+                  
+                  const paths = sourceSvg.querySelectorAll("path");
+                  paths.forEach((path) => {
+                    const newPath = path.cloneNode(true);
+                    group.appendChild(newPath);
+                  });
+                  
+                  routeSvg.appendChild(group);
+                }
+                
+                routeLayer.appendChild(routeSvg);
+                
+                const shouldReverse = meta.reverse || false;
+                console.log("Should reverse:", shouldReverse, "for route:", file);
+                
+                animateAllPaths(routeSvg, () => {
+                  const markerData = markerMeta[file];
+                  if (markerData) {
+                    showMarkers(markerData);
+                  }
+                }, shouldReverse);
+                
+                console.log("Route loaded successfully");
+              } else {
+                console.error("Failed to load route content:", file);
+              }
+            } catch (error) {
+              console.error("Error loading individual route:", error);
+            }
+          });
+          
+          accordionContent.appendChild(button);
         }
-      });
-      
-      routeButtonsContainer.appendChild(button);
-      console.log("Created button for:", data.Label);
+        
+        // Add header and content to section
+        accordionSection.appendChild(accordionHeader);
+        accordionSection.appendChild(accordionContent);
+        
+        // Add section to container
+        accordionContainer.appendChild(accordionSection);
+        
+        console.log(`Created accordion section for category: ${categoryTitle} with ${routesByCategory[category].length} routes`);
+      }
     }
 
     // Clear button
