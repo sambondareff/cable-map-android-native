@@ -5,10 +5,13 @@ An interactive Android application displaying an SVG cable map with animated rou
 ## Features
 
 - **Interactive SVG Map**: High-resolution cable map with proper viewport scaling
+- **Background Routes Layer**: All cable routes displayed permanently at 10% opacity for context
 - **Animated Routes**: Individual route animations with GSAP-powered path drawing
 - **Show All Routes**: Display all routes simultaneously with staggered animations
 - **Route Markers**: SVG markers appear at route endpoints after animations complete
+- **Accordion UI**: Routes organized in collapsible categories (Installed, Under Construction, Planned)
 - **Placenames**: Scalable place name overlays positioned accurately on the map
+- **Proper Layer Ordering**: Animated routes appear below city names and location dots
 - **Responsive Design**: Optimized for various Android screen sizes and orientations
 - **Bottom Navigation**: Route selection menu positioned in bottom-left corner for better mobile UX
 
@@ -26,6 +29,16 @@ An interactive Android application displaying an SVG cable map with animated rou
 - **GSAP**: Green Sock Animation Platform for smooth route animations
 - **SVG**: Scalable Vector Graphics for map and route content
 - **JSON**: Route metadata and positioning data
+
+### Layer Architecture
+The app uses a 6-layer z-index system for optimal visual hierarchy:
+
+1. **Base Layer** (z-index: 1) - Main cable map background
+2. **Background Routes Layer** (z-index: 2) - Static routes at 10% opacity for context
+3. **Route Layer** (z-index: 3) - Animated routes with full opacity
+4. **Placename Layer** (z-index: 4) - City names
+5. **Placename Overlays** (z-index: 5) - City location dots
+6. **Marker Layer** (z-index: 6) - Route endpoint markers
 
 ### Scaling System
 The app uses a unified viewport scaling approach:
@@ -107,16 +120,20 @@ cable-map-android-native/
 ## Usage
 
 ### Navigation
-- **Route Buttons**: Located in bottom-left corner for easy thumb access
+- **Route Panel**: Located in bottom-left corner with accordion-style organization
+- **Category Sections**: Routes grouped by status (Installed, Under Construction, Planned)
+- **Accordion Interaction**: Tap section headers to expand/collapse route lists
 - **Individual Routes**: Tap any route button to animate that specific route
 - **Show All Routes**: Display all routes simultaneously with color coding
 - **Clear Route**: Remove currently displayed routes and markers
 
-### Features
-- **Route Animation**: Routes draw progressively using path animation
-- **Markers**: Appear after route animation completes
+### Visual Features
+- **Background Routes**: All routes permanently visible at 10% opacity for context
+- **Route Animation**: Routes draw progressively using path animation above background
+- **Layer Hierarchy**: Animated routes appear below city names for better readability
+- **Markers**: Appear after route animation completes at the topmost layer
 - **Responsive**: Automatically adapts to screen size and orientation
-- **Smooth Performance**: Optimized for mobile devices
+- **Smooth Performance**: Optimized for mobile devices with WebView acceleration
 
 ## Development Notes
 
@@ -155,7 +172,15 @@ The app logs detailed information to Android logcat:
 
 ## Version History
 
-### Current Version
+### Latest Version (background-routes-feature branch)
+- ✅ **Background Routes Layer**: All routes visible at 10% opacity for permanent context
+- ✅ **Accordion UI**: Routes organized in collapsible categories by status
+- ✅ **Proper Layer Ordering**: Animated routes below city names and location dots
+- ✅ **6-Layer Architecture**: Optimized z-index system for visual hierarchy
+- ✅ **WebView Optimized**: Enhanced performance for mobile WebView environment
+- ✅ **Single-Section Accordion**: Only one category open at a time for clean UX
+
+### Previous Stable Version
 - ✅ Unified viewport scaling approach
 - ✅ Bottom-left menu positioning  
 - ✅ Properly scaled markers
@@ -164,12 +189,17 @@ The app logs detailed information to Android logcat:
 - ✅ Smooth GSAP animations
 - ✅ AndroidAssets bridge for local file loading
 
-### Key Fixes Applied
-1. **Viewport Scaling**: Implemented consistent scaling across all map elements
-2. **Route Positioning**: Fixed alignment between individual and "Show All" routes
-3. **Marker Scaling**: Applied proper scaling to both position and content
-4. **Menu UX**: Moved controls to bottom-left for better mobile accessibility
-5. **Asset Loading**: Corrected file loading paths and bridge configuration
+### Major Features Evolution
+1. **Background Routes Layer**: Added permanent 10% opacity context layer
+2. **Accordion Organization**: Categorized routes by installation status
+3. **Layer Architecture**: Implemented 6-layer z-index system for optimal hierarchy
+4. **Visual Improvements**: Routes now appear below city information for readability
+5. **WebView Performance**: Optimized CSS and animations for mobile WebView
+6. **Viewport Scaling**: Implemented consistent scaling across all map elements
+7. **Route Positioning**: Fixed alignment between individual and "Show All" routes
+8. **Marker Scaling**: Applied proper scaling to both position and content
+9. **Menu UX**: Moved controls to bottom-left for better mobile accessibility
+10. **Asset Loading**: Corrected file loading paths and bridge configuration
 
 ## License
 
