@@ -46,13 +46,18 @@ html, body {
 }
 
 #base-layer { z-index: 1; }
-#placename-layer { 
-    z-index: 3; 
-    pointer-events: none; 
+#background-routes-layer {
+    z-index: 2;
+    pointer-events: none;
     position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.1;
 }
-#placename-overlays { 
-    z-index: 4; 
+#route-layer { 
+    z-index: 3; 
     pointer-events: none; 
     position: absolute; 
     top: 0; 
@@ -60,8 +65,13 @@ html, body {
     width: 100%; 
     height: 100%;
 }
-#route-layer { 
-    z-index: 2; 
+#placename-layer { 
+    z-index: 4; 
+    pointer-events: none; 
+    position: absolute;
+}
+#placename-overlays { 
+    z-index: 5; 
     pointer-events: none; 
     position: absolute; 
     top: 0; 
@@ -146,7 +156,7 @@ html, body {
 }
 
 #marker-layer {
-    z-index: 5;
+    z-index: 6;
     pointer-events: none;
     position: absolute;
     top: 0;
@@ -236,6 +246,7 @@ html, body {
 <div id="app">
   <div id="map-container">
     <div id="base-layer" class="svg-layer"></div>
+    <div id="background-routes-layer"></div>
     <div id="placename-layer"></div>
     <div id="placename-overlays"></div>
     <div id="route-layer"></div>
@@ -571,6 +582,57 @@ window.addEventListener("DOMContentLoaded", () => {
     
     console.log("Loaded route metadata for", Object.keys(routeMeta).length, "routes");
     console.log("Loaded marker metadata for", Object.keys(markerMeta).length, "routes");
+
+    // Load background routes layer (static, non-animated)
+    const backgroundRoutesLayer = document.getElementById("background-routes-layer");
+    if (backgroundRoutesLayer && routeMeta) {
+      const backgroundSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      backgroundSvg.setAttribute("width", "2944");
+      backgroundSvg.setAttribute("height", "1840");
+      backgroundSvg.setAttribute("viewBox", "0 0 2944 1840");
+      backgroundSvg.setAttribute("preserveAspectRatio", "none");
+      backgroundSvg.style.position = "absolute";
+      backgroundSvg.style.top = "0";
+      backgroundSvg.style.left = "0";
+      backgroundSvg.style.width = "100%";
+      backgroundSvg.style.height = "100%";
+      
+      let backgroundRouteCount = 0;
+      for (const [file, meta] of Object.entries(routeMeta)) {
+        try {
+          const svgContent = loadAsset("interactive/" + file);
+          if (!svgContent) continue;
+          
+          const tempDiv = document.createElement("div");
+          tempDiv.innerHTML = svgContent;
+          
+          const sourceSvg = tempDiv.querySelector("svg");
+          if (sourceSvg) {
+            const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            group.setAttribute("transform", `translate(${meta.x}, ${meta.y})`);
+            
+            const paths = sourceSvg.querySelectorAll("path");
+            paths.forEach((path) => {
+              const newPath = path.cloneNode(true);
+              // Remove any animation-related attributes for static display
+              newPath.removeAttribute('stroke-dasharray');
+              newPath.removeAttribute('stroke-dashoffset');
+              newPath.style.strokeDasharray = 'none';
+              newPath.style.strokeDashoffset = 'none';
+              group.appendChild(newPath);
+            });
+            
+            backgroundSvg.appendChild(group);
+            backgroundRouteCount++;
+          }
+        } catch (error) {
+          console.error("Failed to load background route:", file, error);
+        }
+      }
+      
+      backgroundRoutesLayer.appendChild(backgroundSvg);
+      console.log(`Background routes loaded: ${backgroundRouteCount} routes`);
+    }
 
     // Add placename overlays
     if (placenameCoords) {
