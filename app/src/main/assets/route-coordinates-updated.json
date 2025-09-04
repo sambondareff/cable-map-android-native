@@ -1,63 +1,75 @@
 {
-  "route-Google-MetaEchoSpur.svg": {
-    "x": 1070,
-    "y": 680,
-    "Label": "Google-Meta Echo spur"
-  },
-  "route-GoogleBosunCable.svg": {
-    "x": 980,
-    "y": 580,
-    "Label": "Google Bosun cable"
+  "route-VocusInstalled.svg": {
+    "x": 963,
+    "y": 610,
+    "Label": "Vocus installed cables (DJSC, NWCS and TLSSC)",
+    "category": "installed"
   },
   "route-GoogleHonomoana.svg": {
     "x": 1920,
     "y": 460,
-    "Label": "Google Honomoana cable"
-  },
-  "route-GoogleInterlink.svg": {
-    "x": 1020,
-    "y": 900,
-    "Label": "Google Interlink cable"
-  },
-  "route-GoogleMetaEcho.svg": {
-    "x": 989,
-    "y": 302,
-    "Label": "Google-Meta Echo project",
-    "reverse": true
+    "Label": "Google Honomoana",
+    "category": "under-construction"
   },
   "route-GoogleTabua.svg": {
     "x": 2050,
     "y": 580,
-    "Label": "Google Tabua cable"
+    "Label": "Google Tabua",
+    "category": "under-construction"
   },
-  "route-HawaikiNui.svg": {
-    "x": 1003,
-    "y": 599,
-    "Label": "Hawaiki Nui 1"
+  "route-GoogleInterlink.svg": {
+    "x": 1020,
+    "y": 900,
+    "Label": "Google Interlink",
+    "category": "under-construction"
   },
-  "route-IndigoAsia.svg": {
-    "x": 857,
-    "y": 377,
-    "Label": "Inligo’s Asia Connect Cable System"
-  },
-  "route-InligosUnite_1.svg": {
-    "x": 1599,
-    "y": 930,
-    "Label": "Inligo’s Unite Cable System"
+  "route-GoogleBosunCable.svg": {
+    "x": 980,
+    "y": 580,
+    "Label": "Google Bosun",
+    "category": "under-construction"
   },
   "route-MetaWaterworth.svg": {
     "x": 480,
     "y": 267,
-    "Label": "Meta Waterworth"
+    "Label": "Meta Waterworth",
+    "category": "under-construction"
+  },
+  "route-GoogleMetaEcho.svg": {
+    "x": 989,
+    "y": 302,
+    "Label": "Google-Meta Echo",
+    "category": "planned",
+    "reverse": true
   },
   "route-TelstraIntercity.svg": {
     "x": 1590,
     "y": 940,
-    "Label": "Telstra Intercity Fibre Network"
+    "Label": "Telstra Intercity-Fibre Network (Darwin to Adelaide)",
+    "category": "planned"
   },
-  "route-VocusInstalled.svg": {
-    "x": 963,
-    "y": 610,
-    "Label": "Vocus Installed network (DJSC, NWCS, TLSSC)"
+  "route-HawaikiNui.svg": {
+    "x": 1003,
+    "y": 599,
+    "Label": "Hawaiki Nui 1",
+    "category": "planned"
+  },
+  "route-InligosUnite_1.svg": {
+    "x": 1599,
+    "y": 930,
+    "Label": "Inligo Unite cable",
+    "category": "planned"
+  },
+  "route-Google-MetaEchoSpur.svg": {
+    "x": 1070,
+    "y": 680,
+    "Label": "Google-Meta Echo spur",
+    "category": "planned"
+  },
+  "route-IndigoAsia.svg": {
+    "x": 857,
+    "y": 377,
+    "Label": "Inligo's Asia Connect Cable System",
+    "category": "planned"
   }
 }
