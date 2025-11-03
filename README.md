@@ -94,6 +94,13 @@ cable-map-android-native/
 - Android Studio or Gradle command line tools
 - Java 8+ or OpenJDK
 
+### Development Workflow
+
+**IMPORTANT: Before starting development:**
+1. Open Android Studio
+2. Start an Android Virtual Device (AVD) emulator
+3. Verify emulator is running: `~/Library/Android/sdk/platform-tools/adb devices`
+
 ### Build Instructions
 
 1. **Clone/Download the project**
@@ -102,9 +109,13 @@ cable-map-android-native/
    ```bash
    ./gradlew assembleDebug
    ```
-4. **Install APK**:
+4. **Install to Emulator** (automatic if AVD is running):
    ```bash
-   adb install app/build/outputs/apk/debug/app-debug.apk
+   ~/Library/Android/sdk/platform-tools/adb install -r app/build/outputs/apk/debug/app-debug.apk
+   ```
+5. **Timestamped APK Copy** (optional, for version tracking):
+   ```bash
+   cp app/build/outputs/apk/debug/app-debug.apk ~/Downloads/cable-map-$(date +%Y%m%d-%H%M%S).apk
    ```
 
 ### Build Variants
