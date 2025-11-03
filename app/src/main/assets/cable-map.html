@@ -423,45 +423,57 @@ let mapOffsetX = 0;
 let mapOffsetY = 0;
 
 function calculateScale() {
+    // Get actual container dimensions - use window dimensions as most reliable
     const containerWidth = window.innerWidth;
     const containerHeight = window.innerHeight;
-    const mapAspectRatio = 2944 / 1840; // Original map dimensions
+    
+    // Debug viewport info
+    console.log('=== VIEWPORT DEBUG ===');
+    console.log(`window.innerWidth: ${window.innerWidth}`);
+    console.log(`window.innerHeight: ${window.innerHeight}`);
+    console.log(`screen.width: ${screen.width}`);
+    console.log(`screen.height: ${screen.height}`);
+    console.log(`Container: ${containerWidth} x ${containerHeight}`);
+    
+    // Original map dimensions
+    const MAP_WIDTH = 2944;
+    const MAP_HEIGHT = 1840;
+    const mapAspectRatio = MAP_WIDTH / MAP_HEIGHT;
     const containerAspectRatio = containerWidth / containerHeight;
     
-    if (containerAspectRatio > mapAspectRatio) {
-        // Container is wider than map - scale based on height
-        mapScale = containerHeight / 1840;
-        mapOffsetX = (containerWidth - (2944 * mapScale)) / 2;
-        mapOffsetY = 0;
-    } else {
-        // Container is taller than map - scale based on width
-        mapScale = containerWidth / 2944;
-        mapOffsetX = 0;
-        mapOffsetY = (containerHeight - (1840 * mapScale)) / 2;
-    }
-    
-    console.log(`Scale: ${mapScale}, OffsetX: ${mapOffsetX}, OffsetY: ${mapOffsetY}`);
+    console.log(`Map aspect ratio: ${mapAspectRatio}`);
+    console.log(`Container aspect ratio: ${containerAspectRatio}`);
 }
 
 function applyScale() {
     calculateScale();
     const mapContainer = document.getElementById("map-container");
-    mapContainer.style.transform = `translate(${mapOffsetX}px, ${mapOffsetY}px) scale(${mapScale})`;
-    mapContainer.style.width = "2944px";
-    mapContainer.style.height = "1840px";
     
-    // Update layer dimensions
+    // Use viewport scaling to prevent clipping - fills entire screen
+    mapContainer.style.width = "100vw";
+    mapContainer.style.height = "100vh";
+    mapContainer.style.transform = "none";
+    mapContainer.style.position = "absolute";
+    mapContainer.style.top = "0";
+    mapContainer.style.left = "0";
+    
+    // Update layer dimensions to fill viewport
     const layers = [baseLayer, placenameOverlays, routeLayer, markerLayer];
     layers.forEach(layer => {
-        layer.style.width = "2944px";
-        layer.style.height = "1840px";
+        layer.style.width = "100%";
+        layer.style.height = "100%";
     });
     
-    // Update placename layer specific positioning
-    placenameLayer.style.width = "2245px";
-    placenameLayer.style.height = "1255px";
-    placenameLayer.style.top = "320px";
-    placenameLayer.style.left = "463px";
+    // Update placename layer to scale proportionally
+    const scaleFactorX = window.innerWidth / 2944;
+    const scaleFactorY = window.innerHeight / 1840;
+    
+    placenameLayer.style.width = Math.round(2245 * scaleFactorX) + "px";
+    placenameLayer.style.height = Math.round(1255 * scaleFactorY) + "px";
+    placenameLayer.style.top = Math.round(320 * scaleFactorY) + "px";
+    placenameLayer.style.left = Math.round(463 * scaleFactorX) + "px";
+    
+    console.log(`Placename layer scaled: ${placenameLayer.style.width} x ${placenameLayer.style.height}`);
 }
 
 /* ---------- helpers ---------- */
