@@ -564,6 +564,10 @@ function animateAllPaths(container, onComplete, reverse = false) {
 function showMarkers(markerData) {
   const markers = Array.isArray(markerData) ? markerData : [markerData];
   
+  // Scale marker positions to viewport
+  const scaleFactorX = window.innerWidth / 2944;
+  const scaleFactorY = window.innerHeight / 1840;
+  
   for (let i = 0; i < markers.length; i++) {
     const marker = markers[i];
     
@@ -573,8 +577,8 @@ function showMarkers(markerData) {
       const markerDiv = document.createElement("div");
       markerDiv.className = "marker-overlay";
       markerDiv.style.position = "absolute";
-      markerDiv.style.left = marker.x + "px";
-      markerDiv.style.top = marker.y + "px";
+      markerDiv.style.left = Math.round(marker.x * scaleFactorX) + "px";
+      markerDiv.style.top = Math.round(marker.y * scaleFactorY) + "px";
       markerDiv.style.opacity = "0";
       markerDiv.style.transform = "scale(0.8)";
       markerDiv.style.transition = "all 0.5s ease";
@@ -877,9 +881,13 @@ window.addEventListener("DOMContentLoaded", () => {
       const masterSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       masterSvg.setAttribute("width", "2944");
       masterSvg.setAttribute("height", "1840");
+      masterSvg.setAttribute("viewBox", "0 0 2944 1840");
+      masterSvg.setAttribute("preserveAspectRatio", "none");
       masterSvg.style.position = "absolute";
       masterSvg.style.top = "0";
       masterSvg.style.left = "0";
+      masterSvg.style.width = "100%";
+      masterSvg.style.height = "100%";
 
       let routeCount = 0;
       for (const [file, pos] of Object.entries(routeMeta)) {
