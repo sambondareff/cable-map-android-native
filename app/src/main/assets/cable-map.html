@@ -636,6 +636,14 @@ window.addEventListener("DOMContentLoaded", () => {
     // Load base layers
     baseLayer.innerHTML = loadAsset("interactive/Base-Map.svg");
     placenameLayer.innerHTML = loadAsset("interactive/placename-all.svg");
+    
+    // Fix placename SVG to not stretch
+    const placenameSvg = placenameLayer.querySelector('svg');
+    if (placenameSvg) {
+      placenameSvg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      placenameSvg.style.width = '100%';
+      placenameSvg.style.height = '100%';
+    }
 
     // Load JSON metadata
     const placenameCoords = JSON.parse(loadAsset("placename-coordinates.json"));
