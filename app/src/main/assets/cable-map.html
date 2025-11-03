@@ -465,9 +465,29 @@ function applyScale() {
 }
 
 /* ---------- helpers ---------- */
+// Use Android asset loader when available, fallback to fetch
+function loadAsset(path) {
+  if (typeof AndroidAssets !== 'undefined') {
+    return AndroidAssets.loadAsset(path);
+  } else {
+    // Fallback for web testing
+    throw new Error('AndroidAssets bridge not available');
+  }
+}
+
 async function fetchText(url) {
-  const res = await fetch(url);
-  return res.text();
+  try {
+    // Try Android bridge first
+    if (typeof AndroidAssets !== 'undefined') {
+      return loadAsset(url);
+    }
+    // Fallback to fetch for web testing
+    const res = await fetch(url);
+    return res.text();
+  } catch (e) {
+    console.error('Failed to load:', url, e);
+    throw e;
+  }
 }
 
 function animateAllPaths(container, onComplete, reverse = false) {
@@ -529,14 +549,14 @@ function animateAllPaths(container, onComplete, reverse = false) {
   }
 }
 
-async function showMarkers(markerData) {
+function showMarkers(markerData) {
   const markers = Array.isArray(markerData) ? markerData : [markerData];
   
   for (let i = 0; i < markers.length; i++) {
     const marker = markers[i];
     
     try {
-      const svgContent = await fetchText("interactive/" + marker.marker);
+      const svgContent = loadAsset("interactive/" + marker.marker);
       
       const markerDiv = document.createElement("div");
       markerDiv.className = "marker-overlay";
@@ -590,7 +610,7 @@ async function showMarkers(markerData) {
 let routeMeta = {};
 let markerMeta = {};
 
-window.addEventListener("DOMContentLoaded", async () => {
+window.addEventListener("DOMContentLoaded", () => {
   try {
     console.log("Loading cable map assets...");
     
@@ -598,15 +618,18 @@ window.addEventListener("DOMContentLoaded", async () => {
     applyScale();
     
     // Load base layers
-    baseLayer.innerHTML = await fetchText("interactive/Base-Map.svg");
-    placenameLayer.innerHTML = await fetchText("interactive/placename-all.svg");
+    baseLayer.innerHTML = loadAsset("interactive/Base-Map.svg");
+    placenameLayer.innerHTML = loadAsset("interactive/placename-all.svg");
 
     // Load JSON metadata
-    const placenameCoords = await (await fetch("placename-coordinates.json")).json();
-    routeMeta = await (await fetch("route-coordinates-updated.json")).json();
+    const placenameCoords = JSON.parse(loadAsset("placename-coordinates.json"));
+    routeMeta = JSON.parse(loadAsset("route-coordinates-updated.json"));
     
     try {
-      markerMeta = await (await fetch("route-markers.json")).json();
+      const markerContent = loadAsset("route-markers.json");
+      if (markerContent && !markerContent.startsWith('ERROR:')) {
+        markerMeta = JSON.parse(markerContent);
+      }
     } catch (e) {
       console.log("No marker data found, continuing without markers");
       markerMeta = {};
@@ -632,8 +655,8 @@ window.addEventListener("DOMContentLoaded", async () => {
       let backgroundRouteCount = 0;
       for (const [file, meta] of Object.entries(routeMeta)) {
         try {
-          const svgContent = await fetchText("interactive/" + file);
-          if (!svgContent) continue;
+          const svgContent = loadAsset("interactive/" + file);
+          if (!svgContent || svgContent.startsWith('ERROR:')) continue;
           
           const tempDiv = document.createElement("div");
           tempDiv.innerHTML = svgContent;
@@ -672,7 +695,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       div.className = "placename-overlay";
       div.style.left = pos.x + "px";
       div.style.top = pos.y + "px";
-      div.innerHTML = await fetchText("interactive/" + file);
+      div.innerHTML = loadAsset("interactive/" + file);
       placenameOverlays.appendChild(div);
     }
     // Create accordion sections with categorized route buttons
@@ -751,7 +774,7 @@ window.addEventListener("DOMContentLoaded", async () => {
           button.setAttribute("data-file", file);
           button.textContent = data.Label;
           
-          button.addEventListener("click", async () => {
+          button.addEventListener("click", () => {
             console.log("Button clicked for:", file);
             try {
               routeLayer.innerHTML = "";
@@ -772,7 +795,7 @@ window.addEventListener("DOMContentLoaded", async () => {
               routeSvg.style.width = "100%";
               routeSvg.style.height = "100%";
               
-              const svgContent = await fetchText("interactive/" + file);
+              const svgContent = loadAsset("interactive/" + file);
               if (svgContent) {
                 const tempDiv = document.createElement("div");
                 tempDiv.innerHTML = svgContent;
@@ -835,7 +858,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
 
     // Show all routes button
-    document.getElementById("show-all-routes").addEventListener("click", async () => {
+    document.getElementById("show-all-routes").addEventListener("click", () => {
       routeLayer.innerHTML = "";
       markerLayer.innerHTML = "";
 
@@ -851,7 +874,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         console.log(`Loading route ${routeCount + 1}:`, file);
         
         try {
-          const svgContent = await fetchText("interactive/" + file);
+          const svgContent = loadAsset("interactive/" + file);
           
           const tempDiv = document.createElement("div");
           tempDiv.innerHTML = svgContent;
