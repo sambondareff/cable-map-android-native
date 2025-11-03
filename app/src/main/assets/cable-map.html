@@ -84,7 +84,10 @@ html, body {
 .route-overlay { position: relative; pointer-events: none; }
 
 /* placename individual overlays */
-.placename-overlay { position: absolute; pointer-events: none; }
+.placename-overlay { 
+    position: absolute; 
+    pointer-events: none;
+}
 
 /* ---------- UI ---------- */
 #route-buttons {
@@ -589,14 +592,15 @@ function showMarkers(markerData) {
       
       let width, height;
       if (marker.width && marker.height) {
-        width = marker.width;
-        height = marker.height;
+        // Scale marker dimensions to viewport
+        width = Math.round(marker.width * scaleFactorX);
+        height = Math.round(marker.height * scaleFactorY);
       } else if (svgElement) {
-        width = parseInt(svgElement.getAttribute('width')) || 80;
-        height = parseInt(svgElement.getAttribute('height')) || 80;
+        width = Math.round((parseInt(svgElement.getAttribute('width')) || 80) * scaleFactorX);
+        height = Math.round((parseInt(svgElement.getAttribute('height')) || 80) * scaleFactorY);
       } else {
-        width = 80;
-        height = 80;
+        width = Math.round(80 * scaleFactorX);
+        height = Math.round(80 * scaleFactorY);
       }
       
       markerDiv.style.width = width + 'px';
@@ -637,10 +641,10 @@ window.addEventListener("DOMContentLoaded", () => {
     baseLayer.innerHTML = loadAsset("interactive/Base-Map.svg");
     placenameLayer.innerHTML = loadAsset("interactive/placename-all.svg");
     
-    // Fix placename SVG to not stretch
+    // Fix placename SVG to not stretch and scale down text
     const placenameSvg = placenameLayer.querySelector('svg');
     if (placenameSvg) {
-      placenameSvg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      placenameSvg.setAttribute('preserveAspectRatio', 'none');
       placenameSvg.style.width = '100%';
       placenameSvg.style.height = '100%';
     }
@@ -713,12 +717,15 @@ window.addEventListener("DOMContentLoaded", () => {
       console.log(`Background routes loaded: ${backgroundRouteCount} routes`);
     }
 
-    // Add placename overlays
+    // Add placename overlays - scale positions to viewport like markers
+    const scaleFactorX = window.innerWidth / 2944;
+    const scaleFactorY = window.innerHeight / 1840;
+    
     for (const [file, pos] of Object.entries(placenameCoords)) {
       const div = document.createElement("div");
       div.className = "placename-overlay";
-      div.style.left = pos.x + "px";
-      div.style.top = pos.y + "px";
+      div.style.left = Math.round(pos.x * scaleFactorX) + "px";
+      div.style.top = Math.round(pos.y * scaleFactorY) + "px";
       div.innerHTML = loadAsset("interactive/" + file);
       placenameOverlays.appendChild(div);
     }
