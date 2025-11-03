@@ -2,7 +2,7 @@
   "route-VocusInstalled.svg": {
     "x": 963,
     "y": 610,
-    "Label": "Vocus installed cables (DJSC, NWCS and TLSSC)",
+    "Label": "Vocus installed cables (ASCS, DJSC, NWCS and TLSSC)",
     "category": "installed"
   },
   "route-GoogleHonomoana.svg": {
@@ -64,12 +64,14 @@
     "x": 1070,
     "y": 680,
     "Label": "Google-Meta Echo spur",
-    "category": "planned"
+    "category": "planned",
+    "hidden": true
   },
   "route-IndigoAsia.svg": {
     "x": 857,
     "y": 377,
     "Label": "Inligo's Asia Connect Cable System",
-    "category": "planned"
+    "category": "planned",
+    "hidden": true
   }
 }

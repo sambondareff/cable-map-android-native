@@ -155,6 +155,19 @@ html, body {
     border-color: #5a7a7a !important;
 }
 
+#play-video {
+    background: #f5f0fa !important;
+    color: #6a4a7a !important;
+    border-color: #c4a5d4 !important;
+    margin-bottom: 12px !important;
+    text-align: center !important;
+}
+
+#play-video:hover {
+    background: #ebe0f5 !important;
+    border-color: #6a4a7a !important;
+}
+
 /* Accordion styles */
 .accordion-section {
     margin-bottom: 8px;
@@ -215,6 +228,65 @@ html, body {
     margin-left: 12px !important;
     margin-right: 12px !important;
     width: calc(100% - 24px) !important;
+}
+
+/* Video Modal */
+#video-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+}
+
+#video-modal.active {
+    display: flex;
+}
+
+#video-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#video-player {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+#close-video {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #333374;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 24px;
+    font-weight: bold;
+    color: #333374;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    z-index: 10001;
+}
+
+#close-video:hover {
+    background: #ffffff;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 #marker-layer {
@@ -318,9 +390,21 @@ html, body {
   <div id="route-buttons">
     <button id="clear-route">Clear Route</button>
     <button id="show-all-routes">Show All Routes</button>
+    <button id="play-video">▶ Play Video</button>
     
     <!-- Accordion sections will be dynamically generated here -->
     <div id="accordion-container"></div>
+  </div>
+</div>
+
+<!-- Video Modal -->
+<div id="video-modal">
+  <div id="video-container">
+    <video id="video-player" controls>
+      <source src="video/Digital Investment.mp4" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+    <button id="close-video">✕</button>
   </div>
 </div>
 
@@ -604,6 +688,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     // Group routes by category
     const routesByCategory = {};
     for (const [file, data] of Object.entries(routeMeta)) {
+      // Skip hidden routes
+      if (data.hidden) continue;
+      
       const category = data.category || 'planned'; // default to planned if no category
       if (!routesByCategory[category]) {
         routesByCategory[category] = [];
@@ -867,6 +954,32 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   } catch (err) {
     console.error("Startup error:", err);
+  }
+});
+
+// Video modal functionality
+const videoModal = document.getElementById("video-modal");
+const videoPlayer = document.getElementById("video-player");
+const playVideoBtn = document.getElementById("play-video");
+const closeVideoBtn = document.getElementById("close-video");
+
+playVideoBtn.addEventListener("click", () => {
+  videoModal.classList.add("active");
+  videoPlayer.play();
+});
+
+closeVideoBtn.addEventListener("click", () => {
+  videoModal.classList.remove("active");
+  videoPlayer.pause();
+  videoPlayer.currentTime = 0;
+});
+
+// Close modal when clicking outside the video
+videoModal.addEventListener("click", (e) => {
+  if (e.target === videoModal) {
+    videoModal.classList.remove("active");
+    videoPlayer.pause();
+    videoPlayer.currentTime = 0;
   }
 });
 
