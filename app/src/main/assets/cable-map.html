@@ -518,12 +518,54 @@ function animateAllPaths(container, onComplete, reverse = false) {
 
     let completedAnimations = 0;
     const totalAnimations = paths.length;
+    
+    // Uniform dash pattern settings  
+    const dashPx = 24;
+    const gapPx = 24;
 
     paths.forEach((path, index) => {
       const len = path.getTotalLength();
       console.log(`Path ${index + 1}: length=${len}, reverse=${reverse}`);
       
-      if (reverse) {
+      // Check if path has inline stroke-dasharray style
+      const styleAttr = path.getAttribute('style') || '';
+      const hasDashes = styleAttr.includes('stroke-dasharray') && !styleAttr.includes('stroke-dasharray: none');
+      
+      if (hasDashes) {
+        // Animate with uniform dash pattern
+        const dashLength = dashPx + gapPx;
+        const numDashes = Math.ceil(len / dashLength);
+        const totalDashLength = numDashes * dashLength;
+        
+        path.style.strokeDasharray = `${dashPx} ${gapPx}`;
+        
+        if (reverse) {
+          path.style.strokeDashoffset = -totalDashLength;
+          gsap.to(path, {
+            strokeDashoffset: 0,
+            duration: 2,
+            ease: "none",
+            onComplete: () => {
+              completedAnimations++;
+              if (completedAnimations === totalAnimations && onComplete) onComplete();
+            }
+          });
+        } else {
+          gsap.fromTo(path,
+            { strokeDashoffset: totalDashLength },
+            { 
+              strokeDashoffset: 0, 
+              duration: 2,
+              ease: "none",
+              onComplete: () => {
+                completedAnimations++;
+                if (completedAnimations === totalAnimations && onComplete) onComplete();
+              }
+            }
+          );
+        }
+      } else if (reverse) {
+        // Solid line reverse animation
         path.style.strokeDasharray = len;
         path.style.strokeDashoffset = -len;
         
@@ -533,15 +575,12 @@ function animateAllPaths(container, onComplete, reverse = false) {
           ease: "none",
           onComplete: () => {
             completedAnimations++;
-            console.log(`Reverse animation ${completedAnimations}/${totalAnimations} completed`);
-            if (completedAnimations === totalAnimations && onComplete) {
-              onComplete();
-            }
+            if (completedAnimations === totalAnimations && onComplete) onComplete();
           }
         });
       } else {
-        gsap.fromTo(
-          path,
+        // Solid line normal animation
+        gsap.fromTo(path,
           { strokeDasharray: len, strokeDashoffset: len },
           { 
             strokeDashoffset: 0, 
@@ -549,10 +588,7 @@ function animateAllPaths(container, onComplete, reverse = false) {
             ease: "none",
             onComplete: () => {
               completedAnimations++;
-              console.log(`Normal animation ${completedAnimations}/${totalAnimations} completed`);
-              if (completedAnimations === totalAnimations && onComplete) {
-                onComplete();
-              }
+              if (completedAnimations === totalAnimations && onComplete) onComplete();
             }
           }
         );
@@ -924,10 +960,20 @@ window.addEventListener("DOMContentLoaded", () => {
             
             paths.forEach((path, i) => {
               const newPath = path.cloneNode(true);
+              
+              // Check if original path had dashes before modifying
+              const styleAttr = path.getAttribute('style') || '';
+              const hasDashes = styleAttr.includes('stroke-dasharray') && !styleAttr.includes('stroke-dasharray: none');
+              
               newPath.setAttribute('stroke-width', '3');
               newPath.setAttribute('stroke', `hsl(${routeCount * 30 + i * 10}, 70%, 50%)`);
-              newPath.removeAttribute('stroke-dasharray');
+              newPath.setAttribute('fill', 'none');
               newPath.removeAttribute('stroke-dashoffset');
+              
+              if (hasDashes) {
+                newPath.setAttribute('data-has-dashes', 'true');
+              }
+              newPath.removeAttribute('stroke-dasharray'); // Will be set during animation
               
               if (shouldReverse) {
                 newPath.setAttribute('data-reverse', 'true');
@@ -959,11 +1005,60 @@ window.addEventListener("DOMContentLoaded", () => {
         return;
       }
       
+      const dashPx = 24;
+      const gapPx = 24;
+      
       paths.forEach((path) => {
         const len = path.getTotalLength();
         const shouldReverse = path.getAttribute('data-reverse') === 'true';
+        const hasDashes = path.getAttribute('data-has-dashes') === 'true';
         
-        if (shouldReverse) {
+        if (hasDashes) {
+          // Animate with uniform dash pattern
+          const dashLength = dashPx + gapPx;
+          const numDashes = Math.ceil(len / dashLength);
+          const totalDashLength = numDashes * dashLength;
+          
+          path.style.strokeDasharray = `${dashPx} ${gapPx}`;
+          
+          if (shouldReverse) {
+            path.style.strokeDashoffset = -totalDashLength;
+            gsap.to(path, {
+              strokeDashoffset: 0,
+              duration: 2,
+              ease: "none",
+              onComplete: () => {
+                completedAnimations++;
+                if (completedAnimations === totalAnimations) {
+                  for (const [file, markerData] of Object.entries(markerMeta)) {
+                    if (routeMeta[file]) {
+                      showMarkers(markerData);
+                    }
+                  }
+                }
+              }
+            });
+          } else {
+            gsap.fromTo(path,
+              { strokeDashoffset: totalDashLength },
+              { 
+                strokeDashoffset: 0, 
+                duration: 2,
+                ease: "none",
+                onComplete: () => {
+                  completedAnimations++;
+                  if (completedAnimations === totalAnimations) {
+                    for (const [file, markerData] of Object.entries(markerMeta)) {
+                      if (routeMeta[file]) {
+                        showMarkers(markerData);
+                      }
+                    }
+                  }
+                }
+              }
+            );
+          }
+        } else if (shouldReverse) {
           path.style.strokeDasharray = len;
           path.style.strokeDashoffset = -len;
           
