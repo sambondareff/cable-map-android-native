@@ -49,3 +49,4 @@ externalNativeBuild/
 
 # OS generated files
 Thumbs.db
+app/src/main/assets/video/
