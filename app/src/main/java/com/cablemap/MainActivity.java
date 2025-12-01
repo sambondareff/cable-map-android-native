@@ -8,6 +8,9 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebSettings;
 import android.webkit.JavascriptInterface;
+import android.webkit.WebChromeClient;
+import android.webkit.ConsoleMessage;
+import android.util.Log;
 import java.io.InputStream;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -44,6 +47,9 @@ public class MainActivity extends Activity {
     }
 
     private void setupWebView() {
+        // Enable debugging
+        WebView.setWebContentsDebuggingEnabled(true);
+        
         WebSettings webSettings = webView.getSettings();
         
         // Enable JavaScript
@@ -90,6 +96,16 @@ public class MainActivity extends Activity {
 
         // Enable hardware acceleration for better performance
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        
+        // Enable console logging
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
+                Log.d("WebView", consoleMessage.message() + " -- From line " + 
+                      consoleMessage.lineNumber() + " of " + consoleMessage.sourceId());
+                return true;
+            }
+        });
         
         // Add JavaScript interface to load assets
         webView.addJavascriptInterface(new AssetLoader(), "AndroidAssets");

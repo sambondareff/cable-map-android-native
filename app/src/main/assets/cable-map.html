@@ -266,30 +266,46 @@ html, body {
     object-fit: contain;
 }
 
+/* Hide the large play button overlay */
+#video-player::-webkit-media-controls-overlay-play-button {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+#video-player::-webkit-media-controls-start-playback-button {
+    display: none !important;
+    opacity: 0 !important;
+}
+
+#video-player::-webkit-media-controls-overlay-enclosure {
+    display: none !important;
+}
+
 #close-video {
     position: absolute;
-    top: 20px;
-    right: 20px;
-    width: 50px;
-    height: 50px;
+    left: 30px;
+    bottom: 30px;
+    padding: 10px 20px;
     background: rgba(255, 255, 255, 0.9);
     border: 2px solid #333374;
-    border-radius: 50%;
+    border-radius: 4px;
     cursor: pointer;
-    font-size: 24px;
+    font-size: 14px;
     font-weight: bold;
     color: #333374;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     transition: all 0.2s ease;
     z-index: 10001;
 }
 
 #close-video:hover {
     background: #ffffff;
-    transform: scale(1.1);
+    transform: scale(1.05);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+#close-video:active {
+    transform: scale(1);
 }
 
 #marker-layer {
@@ -403,11 +419,11 @@ html, body {
 <!-- Video Modal -->
 <div id="video-modal">
   <div id="video-container">
-    <video id="video-player" controls>
+    <video id="video-player" controls playsinline webkit-playsinline preload="metadata" poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
       <source src="video/Digital Investment.mp4" type="video/mp4">
       Your browser does not support the video tag.
     </video>
-    <button id="close-video">✕</button>
+    <button id="close-video">✕ Close Video</button>
   </div>
 </div>
 
@@ -1124,6 +1140,12 @@ playVideoBtn.addEventListener("click", () => {
 closeVideoBtn.addEventListener("click", () => {
   videoModal.classList.remove("active");
   videoPlayer.pause();
+  videoPlayer.currentTime = 0;
+});
+
+// Auto-close when video finishes playing
+videoPlayer.addEventListener("ended", () => {
+  videoModal.classList.remove("active");
   videoPlayer.currentTime = 0;
 });
 

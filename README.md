@@ -10,6 +10,7 @@ An interactive Android application displaying an SVG cable map with animated rou
 - **Show All Routes**: Display all routes simultaneously with staggered animations
 - **Route Markers**: SVG markers appear at route endpoints after animations complete
 - **Accordion UI**: Routes organized in collapsible categories (Installed, Under Construction, Planned)
+- **Video Playback**: Full-screen video modal with auto-close on completion
 - **Placenames**: Scalable place name overlays positioned accurately on the map
 - **Proper Layer Ordering**: Animated routes appear below city names and location dots
 - **Responsive Design**: Optimized for various Android screen sizes and orientations
@@ -136,7 +137,15 @@ cable-map-android-native/
 - **Accordion Interaction**: Tap section headers to expand/collapse route lists
 - **Individual Routes**: Tap any route button to animate that specific route
 - **Show All Routes**: Display all routes simultaneously with color coding
+- **Play Video**: Opens full-screen video modal with controls
 - **Clear Route**: Remove currently displayed routes and markers
+
+### Video Features
+- **Full-Screen Modal**: Video plays in overlay modal with dark background
+- **Video Controls**: Standard playback controls (play/pause, seek, volume)
+- **Close Button**: Positioned at bottom-left (30px from edges) for easy access
+- **Auto-Close**: Video modal automatically closes when playback completes
+- **Android WebView Optimized**: Transparent poster eliminates default play button overlay
 
 ### Visual Features
 - **Background Routes**: All routes permanently visible at 10% opacity for context
@@ -183,7 +192,9 @@ The app logs detailed information to Android logcat:
 
 ## Version History
 
-### Latest Version (background-routes-feature branch)
+### Latest Version
+- ✅ **Video Playback**: Full-screen video modal with auto-close functionality
+- ✅ **Android WebView Fix**: Transparent poster eliminates default play button overlay
 - ✅ **Background Routes Layer**: All routes visible at 10% opacity for permanent context
 - ✅ **Accordion UI**: Routes organized in collapsible categories by status
 - ✅ **Proper Layer Ordering**: Animated routes below city names and location dots
